@@ -1,64 +1,75 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# Shamo Backend – Shoe Store REST API
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+REST API for **Shamo**, a shoe store mobile app. It serves products and categories, handles user registration and login with token authentication, and records checkout transactions. Built with **Laravel 8**, **Jetstream** and **Sanctum**.
 
-## About Laravel
+The Flutter client is in [NoviIndraF/shamo_apps](https://github.com/NoviIndraF/shamo_apps).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- Product list with filters (name, description, tags, price range, category) and pagination.
+- Product categories, optionally with their products.
+- Register, login and logout with Sanctum bearer tokens.
+- Fetch and update the user profile.
+- Checkout: create a transaction with its items, address, total and shipping price.
+- Transaction history per user, filterable by status.
+- Every response uses the same JSON envelope (`meta` + `data`) from `App\Helpers\ResponseFormatter`.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## API
 
-## Learning Laravel
+Base URL: `http://127.0.0.1:8000/api`
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/products` | – | List products. Query: `id`, `limit`, `name`, `description`, `tags`, `price_from`, `price_to`, `categories` |
+| GET | `/categories` | – | List categories. Query: `id`, `limit`, `name`, `show_product` |
+| POST | `/register` | – | Body: `name`, `username`, `email`, `phone`, `password` |
+| POST | `/login` | – | Body: `email`, `password`. Returns `access_token` |
+| GET | `/user` | Bearer | Current user |
+| POST | `/user` | Bearer | Update profile |
+| POST | `/logout` | Bearer | Revoke the current token |
+| GET | `/transaction` | Bearer | User transactions. Query: `id`, `limit`, `status` |
+| POST | `/checkout` | Bearer | Body: `address`, `items[]` (`id`, `quantity`), `total_price`, `shipping_price`, `status` |
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Transaction `status` is one of `PENDING`, `SUCCESS`, `CANCELED`, `FAILED`, `SHIPPING`, `SHIPPED`.
 
-## Laravel Sponsors
+Example response:
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+```json
+{
+  "meta": { "code": 200, "status": "success", "message": "Data produk berhasil diambil" },
+  "data": { "current_page": 1, "data": [ { "id": 1, "name": "...", "price": 58.6, "category": { "id": 1, "name": "..." } } ] }
+}
+```
 
-### Premium Partners
+## Data model
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+```
+users              + username, phone, roles (USER by default)
+product_categories  id, name
+products            id, name, price, description, tags, categories_id
+product_galleries   id, products_id, url
+transactions        id, users_id, address, total_price, shipping_price, status, payment (MANUAL)
+transaction_items   id, users_id, products_id, transactions_id, quantity
+```
 
-## Contributing
+## Tech stack
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- Laravel 8, PHP 7.3+ / 8.0
+- Laravel Jetstream (Livewire) and Fortify for the web login, Laravel Sanctum for API tokens
+- MySQL
+- `yajra/laravel-datatables-oracle`
 
-## Code of Conduct
+## Getting started
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Requirements: PHP 7.3–8.1, Composer, Node.js (for the Jetstream assets), MySQL.
 
-## Security Vulnerabilities
+```bash
+composer install
+cp .env.example .env          # set DB_DATABASE (default: shamo_backend), DB_USERNAME, DB_PASSWORD
+php artisan key:generate
+php artisan migrate
+npm install && npm run dev
+php artisan serve
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+The API is then available at http://127.0.0.1:8000/api. Products and categories are added directly in the database (there is no admin panel yet).
