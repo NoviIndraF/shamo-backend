@@ -34,7 +34,7 @@ class TransactionController extends Controller
                 }
         }
 
-        $transaction = Transaction::with('items.product')->where('user_id', Auth::user()->id);
+        $transaction = Transaction::with('items.product')->where('users_id', Auth::user()->id);
         
         if ($status){
             $transaction->where('status', $status);
@@ -52,7 +52,7 @@ class TransactionController extends Controller
             'items.*.id' => 'exists:products,id',
             'total_price' => 'required',
             'shipping_price' => 'required',
-            'status' => 'require|in:PENDING,SUCCESS,CANCELED,FAILED,SHIPPING,SHIPPED'
+            'status' => 'required|in:PENDING,SUCCESS,CANCELED,FAILED,SHIPPING,SHIPPED'
         ]);
 
         $transaction = Transaction::create([
